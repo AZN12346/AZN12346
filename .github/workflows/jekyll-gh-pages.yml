@@ -1,0 +1,45 @@
+name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+
+on:
+  push:
+    branches: ["main"]  # Triggers on pushes to the main branch
+  workflow_dispatch:    # Allows manual triggering of the workflow
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false  # Ensures that in-progress deployments are not cancelled
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Specifies the runner environment
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4  # Checks out the repository content to the runner
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5  # Configures GitHub Pages settings
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1  # Builds the Jekyll site
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3  # Uploads the built site as an artifact
+
+  deploy:
+    needs: build  # Specifies that this job needs the build job to complete first
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}  # Dynamically sets the deployment URL
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4  # Deploys the site to GitHub Pages
